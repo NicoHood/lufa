@@ -63,6 +63,9 @@ static bool RunBootloader = true;
  */
 #define MagicBootKey (*(uint16_t *)(RAMEND-1))
 
+// Bootloader timeout, no init to survive the later variable init section
+static uint8_t timeout ATTR_NO_INIT;
+
 /** Special startup routine to check if the bootloader was started via a watchdog reset, and if the magic application
  *  start key has been loaded into \ref MagicBootKey. If the bootloader started via the watchdog and the key is valid,
  *  this will force the user application to start via a software jump.
@@ -78,6 +81,7 @@ void Application_Jump_Check(void)
 	bool ApplicationValid = (pgm_read_word_near(0) != 0xFFFF);
 
 	bool JumpToApplication = false;
+    timeout = 0;
 
 	#if (BOARD == BOARD_LEONARDO)
 		/* First case: external reset, bootKey NOT in memory. We'll put the bootKey in memory, then spin
@@ -101,9 +105,36 @@ void Application_Jump_Check(void)
 			}
 		}
 
-		/* On a power-on reset, we ALWAYS want to go to the sketch if there is one. */
+		/* On a power-on reset, we ALWAYS want to go to the bootloader for about 3s. */
 		else if (mcusr_state & (1 << PORF)) {
-			JumpToApplication = true;
+
+            // Click wheel
+            #ifdef HARDWARE_MINI_CLICK_V1
+                #define PORTID_CLICK        PORTE6
+                #define PORT_CLICK          PORTE
+                #define DDR_CLICK           DDRE
+                #define PIN_CLICK           PINE
+            #elif defined(HARDWARE_MINI_CLICK_V2)
+                #define PORTID_CLICK        PORTF4
+                #define PORT_CLICK          PORTF
+                #define DDR_CLICK           DDRF
+                #define PIN_CLICK           PINF
+            #else
+                #error Hardware unknown
+            #endif
+
+            /* Pressing wheel starts the bootloader */
+            DDR_CLICK &= ~(1 << PORTID_CLICK);
+            PORT_CLICK |= (1 << PORTID_CLICK);
+
+            /* Small delay for detection */
+            _delay_ms(10);
+
+            /* Use a timeout if the button was not pressed */
+            if (PIN_CLICK & (1 << PORTID_CLICK))
+            {
+                timeout = 0xFF;
+            }
 		}
 
 		/* On a watchdog reset, if the bootKey isn't set, and there's a sketch, we should just
@@ -225,6 +256,15 @@ int main(void)
 	{
 		CDC_Task();
 		USB_USBTask();
+
+        // If a timeout is used, exit when it expired
+        if(timeout){
+            timeout--;
+            if(!timeout){
+                RunBootloader = false;
+            }
+            _delay_ms(10);
+        }
 	}
 
 	/* Wait a short time to end all USB transactions and then disconnect */
@@ -726,4 +766,9 @@ static void CDC_Task(void)
 
 	/* Acknowledge the command from the host */
 	Endpoint_ClearOUT();
+
+    // No error, reset timeout
+    if(timeout){
+        timeout = 255;
+    }
 }
