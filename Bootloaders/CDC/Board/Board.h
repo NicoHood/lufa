@@ -68,20 +68,10 @@
 			#define BOARD_HAS_LEDS
 
 		// Click wheel
-		#ifdef HARDWARE_MINI_CLICK_V1
-			#warning Leds will not be functional!
-			#define PORTID_CLICK        PORTE6
-			#define PORT_CLICK          PORTE
-			#define DDR_CLICK           DDRE
-			#define PIN_CLICK           PINE
-		#elif defined(HARDWARE_MINI_CLICK_V2)
-			#define PORTID_CLICK        PORTF4
-			#define PORT_CLICK          PORTF
-			#define DDR_CLICK           DDRF
-			#define PIN_CLICK           PINF
-		#else
-			#error Hardware unknown
-		#endif
+		#define PORTID_CLICK        PORTF4
+		#define PORT_CLICK          PORTF
+		#define DDR_CLICK           DDRF
+		#define PIN_CLICK           PINF
 
 	/* Disable C linkage for C++ Compilers: */
 		#if defined(__cplusplus)
