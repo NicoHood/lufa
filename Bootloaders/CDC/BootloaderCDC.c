@@ -189,52 +189,43 @@ void Application_Jump_Check(void)
  *  \brief  Flash a page of data to the MCU flash
  *  \param  page    Page address in bytes
  *  \param  buf     Pointer to a buffer SPM_PAGESIZE long
- *  \note   If the function needs to be called from the firmware use the jump table below.
+ *  \note   If the function needs to be called from the firmware:
+ *  \note   typedef void (*boot_program_page_t)(uint16_t page, uint8_t* buf);
+ *  \note   const boot_program_page_t boot_program_page = (boot_program_page_t)0x3FC0;
  */
+#include <util/atomic.h>
 #define SPM_PAGE_SIZE_BYTES_BM (SPM_PAGESIZE - 1)
-static void boot_program_page(uint16_t page, uint8_t* buf) __attribute__ ((section (".spmfunc"), used, noinline));
+static void boot_program_page(uint16_t page, uint8_t* buf)  __attribute__ ((section (".spmfunc"), noinline, used));
 static void boot_program_page(uint16_t page, uint8_t* buf)
 {
+    uint16_t* words = (uint16_t*)buf;
+    uint16_t PageWord;
+
     // Check we are not overwriting this particular routine
     if ((page >= (FLASHEND - SPM_PAGESIZE + 1)) || ((page & SPM_PAGE_SIZE_BYTES_BM) != 0))
     {
         return;
     }
 
-    // Erase page, wait for memories to be ready
-    boot_page_erase(page);
-    boot_spm_busy_wait();
-
-    // Fill the bootloader temporary page buffer
-    uint16_t* words = (uint16_t*)buf;
-    for (uint8_t PageWord = 0; PageWord < (SPM_PAGESIZE / 2); PageWord++)
+    ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
     {
-        // Write the next data word to the FLASH page
-        boot_page_fill(page + ((uint16_t)PageWord << 1), *words);
-        words++;
+        // Erase page, wait for memories to be ready
+        boot_page_erase(page);
+        boot_spm_busy_wait();
+
+        // Fill the bootloader temporary page buffer
+        for (PageWord = 0; PageWord < (SPM_PAGESIZE / 2); PageWord++)
+        {
+            // Write the next data word to the FLASH page
+            boot_page_fill(page + ((uint16_t)PageWord << 1), *words);
+            words++;
+        }
+
+        // Store buffer in flash page, wait until the memory is written, re-enable RWW section
+        boot_page_write(page);
+        boot_spm_busy_wait();
+        boot_rww_enable();
     }
-
-    // Store buffer in flash page, wait until the memory is written, re-enable RWW section
-    boot_page_write(page);
-    boot_spm_busy_wait();
-    boot_rww_enable();
-}
-
-/*! \fn     jmptablewrp
- *  \brief  Small wrapper to call boot_program_page wherever it is located inside the last flash page
- *  \note   If the function needs to be called from the firmware:
- *  \note   typedef void (*boot_program_page_t)(uint16_t page, uint8_t* buf);
- *  \note   const boot_program_page_t boot_program_page = (boot_program_page_t)(FLASHEND-1);
- */
-static void jmptablewrp(void) __attribute__ ((section (".spmjmptable"), used, noinline, naked));
-static void jmptablewrp(void)
-{
-    asm volatile (
-        ".section .spmjmptable, \"ax\"\n"
-        ".global spmjmptable\n"
-        "spmjmptable:\n"
-        "rjmp boot_program_page\n"
-    );
 }
 
 /** Main program entry point. This routine configures the hardware required by the bootloader, then continuously
@@ -287,10 +278,8 @@ int main(void)
 /** Configures all hardware required for the bootloader. */
 static void SetupHardware(void)
 {
-#if F_CPU != F_USB
 	/* Disable clock division */
 	clock_prescale_set(clock_div_1);
-#endif
 
 	/* Relocate the interrupt vector table to the bootloader section */
 	MCUCR = (1 << IVCE);
