@@ -108,7 +108,7 @@ void Application_Jump_Check(void)
 		/* On a power-on reset, we ALWAYS want to go to the bootloader for about 3s. */
 		else if (mcusr_state & (1 << PORF)) {
 
-            /* Pressing wheel starts the bootloader */
+            /* Pressing wheel starts the bootloader until a firmware was flashed as recovery*/
             DDR_CLICK &= ~(1 << PORTID_CLICK);
             PORT_CLICK |= (1 << PORTID_CLICK);
 
@@ -118,6 +118,7 @@ void Application_Jump_Check(void)
             /* Use a timeout if the button was not pressed */
             if (PIN_CLICK & (1 << PORTID_CLICK))
             {
+                /* By default end the bootloader after 3 seconds if no recovery mode was requested */
                 timeout = 0xFF;
             }
 		}
