@@ -249,7 +249,7 @@ int main(void)
 	/* Disconnect from the host - USB interface will be reset later along with the AVR */
 	USB_Detach();
 
-	#if (BOARD != BOARD_LEONARDO || BOARD == USER)
+	#if (BOARD != BOARD_LEONARDO && BOARD != USER)
 		/* Unlock the forced application start mode of the bootloader if it is restarted */
 		MagicBootKey = MAGIC_BOOT_KEY;
 	#endif
