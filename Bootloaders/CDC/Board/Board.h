@@ -1,0 +1,93 @@
+/*
+             LUFA Library
+     Copyright (C) Dean Camera, 2016.
+
+  dean [at] fourwalledcubicle [dot] com
+           www.lufa-lib.org
+*/
+
+/*
+  Copyright 2016  Dean Camera (dean [at] fourwalledcubicle [dot] com)
+
+  Permission to use, copy, modify, distribute, and sell this
+  software and its documentation for any purpose is hereby granted
+  without fee, provided that the above copyright notice appear in
+  all copies and that both that the copyright notice and this
+  permission notice and warranty disclaimer appear in supporting
+  documentation, and that the name of the author not be used in
+  advertising or publicity pertaining to distribution of the
+  software without specific, written prior permission.
+
+  The author disclaims all warranties with regard to this
+  software, including all implied warranties of merchantability
+  and fitness.  In no event shall the author be liable for any
+  special, indirect or consequential damages or any damages
+  whatsoever resulting from loss of use, data or profits, whether
+  in an action of contract, negligence or other tortious action,
+  arising out of or in connection with the use or performance of
+  this software.
+*/
+
+/** \file
+ *  \brief Board specific information header for the Arduino Leonardo board.
+ *  \copydetails Group_BoardInfo_LEONARDO
+ *
+ *  \note This file should not be included directly. It is automatically included as needed by the Board driver
+ *        dispatch header located in LUFA/Drivers/Board/Board.h.
+ */
+
+/** \ingroup Group_BoardInfo
+ *  \defgroup Group_BoardInfo_LEONARDO LEONARDO
+ *  \brief Board specific information header for the Arduino Leonardo board.
+ *
+ *  Board specific information header for the Arduino Leonardo board (http://arduino.cc/en/Main/arduinoBoardLeonardo).
+ *
+ *  @{
+ */
+
+#ifndef __BOARD_LEONARDO_H__
+#define __BOARD_LEONARDO_H__
+
+	/* Includes: */
+		#include <LUFA/Common/Common.h>
+		#include <LUFA/Drivers/Board/LEDs.h>
+
+	/* Enable C linkage for C++ Compilers: */
+		#if defined(__cplusplus)
+			extern "C" {
+		#endif
+
+	/* Preprocessor Checks: */
+		#if !defined(__INCLUDE_FROM_BOARD_H)
+			#error Do not include this file directly. Include LUFA/Drivers/Board/Board.h instead.
+		#endif
+
+	/* Public Interface - May be used in end-application: */
+		/* Macros: */
+			/** Indicates the board has hardware LEDs mounted. */
+			#define BOARD_HAS_LEDS
+
+		// Click wheel
+		#ifdef HARDWARE_MINI_CLICK_V1
+			#warning Leds will not be functional!
+			#define PORTID_CLICK        PORTE6
+			#define PORT_CLICK          PORTE
+			#define DDR_CLICK           DDRE
+			#define PIN_CLICK           PINE
+		#elif defined(HARDWARE_MINI_CLICK_V2)
+			#define PORTID_CLICK        PORTF4
+			#define PORT_CLICK          PORTF
+			#define DDR_CLICK           DDRF
+			#define PIN_CLICK           PINF
+		#else
+			#error Hardware unknown
+		#endif
+
+	/* Disable C linkage for C++ Compilers: */
+		#if defined(__cplusplus)
+			}
+		#endif
+
+#endif
+
+/** @} */

@@ -83,7 +83,7 @@ void Application_Jump_Check(void)
 	bool JumpToApplication = false;
     timeout = 0;
 
-	#if (BOARD == BOARD_LEONARDO)
+	#if (BOARD == BOARD_LEONARDO || BOARD == USER)
 		/* First case: external reset, bootKey NOT in memory. We'll put the bootKey in memory, then spin
 		 * our wheels for about 1000ms, then proceed to the sketch, if there is one. If, during that 1000ms,
 		 * another external reset occurs, on the next pass through this decision tree, execution will fall
@@ -107,21 +107,6 @@ void Application_Jump_Check(void)
 
 		/* On a power-on reset, we ALWAYS want to go to the bootloader for about 3s. */
 		else if (mcusr_state & (1 << PORF)) {
-
-            // Click wheel
-            #ifdef HARDWARE_MINI_CLICK_V1
-                #define PORTID_CLICK        PORTE6
-                #define PORT_CLICK          PORTE
-                #define DDR_CLICK           DDRE
-                #define PIN_CLICK           PINE
-            #elif defined(HARDWARE_MINI_CLICK_V2)
-                #define PORTID_CLICK        PORTF4
-                #define PORT_CLICK          PORTF
-                #define DDR_CLICK           DDRF
-                #define PIN_CLICK           PINF
-            #else
-                #error Hardware unknown
-            #endif
 
             /* Pressing wheel starts the bootloader */
             DDR_CLICK &= ~(1 << PORTID_CLICK);
@@ -264,7 +249,7 @@ int main(void)
 	/* Disconnect from the host - USB interface will be reset later along with the AVR */
 	USB_Detach();
 
-	#if (BOARD != BOARD_LEONARDO)
+	#if (BOARD != BOARD_LEONARDO || BOARD == USER)
 		/* Unlock the forced application start mode of the bootloader if it is restarted */
 		MagicBootKey = MAGIC_BOOT_KEY;
 	#endif
@@ -378,7 +363,6 @@ static void ReadWriteMemoryBlock(const uint8_t Command)
 	char     MemoryType;
 
 	uint8_t  HighByte = 0;
-	uint8_t  LowByte  = 0;
 
 	BlockSize  = (FetchNextCommandByte() << 8);
 	BlockSize |=  FetchNextCommandByte();
