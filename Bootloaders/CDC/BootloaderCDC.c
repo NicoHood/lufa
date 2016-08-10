@@ -418,8 +418,13 @@ static void ReadWriteMemoryBlock(const uint8_t Command)
 
 		if (MemoryType == MEMORY_TYPE_FLASH)
 		{
-			boot_page_erase(PageStartAddress);
-			boot_spm_busy_wait();
+            /* Do not overwrite the bootloader itself */
+            if (PageStartAddress >= BOOT_START_ADDR)
+            {
+                /* Send error byte back to the host */
+                WriteNextResponseByte('?');
+                return;
+            }
 		}
 
 		while (BlockSize--)
@@ -428,8 +433,6 @@ static void ReadWriteMemoryBlock(const uint8_t Command)
 			{
                 buf[CurrAddress & 127] = FetchNextCommandByte();
                 CurrAddress ++;
-
-				HighByte = !HighByte;
 			}
 			else
 			{
