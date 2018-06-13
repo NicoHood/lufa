@@ -273,11 +273,13 @@
 				static int PRNT_Device_getchar_Blocking(FILE* Stream) ATTR_NON_NULL_PTR_ARG(1);
 				#endif
 
-				void PRNT_Device_Event_Stub(void) ATTR_CONST;
+				void PRNT_Device_Event_Stub(void);
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wattribute-alias"
 				void EVENT_PRNT_Device_SoftReset(USB_ClassInfo_PRNT_Device_t* const PRNTInterfaceInfo)
 				                                 ATTR_WEAK ATTR_NON_NULL_PTR_ARG(1) ATTR_ALIAS(PRNT_Device_Event_Stub);
-
+#pragma GCC diagnostic pop
 			#endif
 
 	#endif
